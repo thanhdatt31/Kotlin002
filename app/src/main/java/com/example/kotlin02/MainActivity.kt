@@ -3,6 +3,8 @@ package com.example.kotlin02
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.os.Handler
+import android.os.HandlerThread
+import android.os.SystemClock
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
@@ -14,21 +16,76 @@ import java.util.*
 import kotlin.concurrent.schedule
 
 class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
-    private var gestureDetectorCompat: GestureDetectorCompat? = null
     private var id = 0
+    private lateinit var handler: Handler
+    private lateinit var runnable: Runnable
+    private var checkRunnable: Boolean = false
+    private val handlerThread: HandlerThread = HandlerThread("MyThread")
+    private var gestureDetectorCompat: GestureDetectorCompat? = null
+
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        handlerThread.start()
+        handler = Handler(handlerThread.looper)
         gestureDetectorCompat = GestureDetectorCompat(this, this)
-        btn_test.setOnClickListener { id = 0 }
+        layout_touchEvent.setOnTouchListener { _, event ->
+            gestureDetectorCompat!!.onTouchEvent(event)
+
+            //remove runnable when user touch on screen
+            if (checkRunnable) {
+                handler.removeCallbacks(runnable)
+            }
+            //in/de crease when finger don't touch screen anymore
+            if (event.action == MotionEvent.ACTION_UP) {
+                runnable = Runnable {
+                    when {
+                        id > 0 -> {
+                            checkRunnable = true
+                            for (i in 1..id) {
+                                id--
+                                Thread.sleep(105)
+                                this@MainActivity.runOnUiThread {
+                                    this.tv_number_show.text = id.toString()
+                                }
+                                if (id == 0) {
+                                    break
+                                }
+                            }
+                        }
+                        id < 0 -> {
+                            checkRunnable = true
+                            for (i in id..-1) {
+                                id++
+                                Thread.sleep(105)
+                                this@MainActivity.runOnUiThread {
+                                    this.tv_number_show.text = id.toString()
+                                }
+                                if (id == 0) {
+                                    break
+                                }
+                            }
+                        }
+                    }
+                }
+                // delay to check if user touch screen again
+                handler.postDelayed(runnable, 2000)
+            }
+            true
+        }
     }
+
+    private fun incrementNumber() {
+
+    }
+
 
     override fun onShowPress(e: MotionEvent?) {
         return
     }
 
     override fun onSingleTapUp(e: MotionEvent?): Boolean {
-        Log.d("datnt", "onSingleTapUp: ")
         return true
     }
 
@@ -53,71 +110,19 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     ): Boolean {
         if (distanceY > 0) {
             id++
-            if (id > 100) {
-                tv_result.setTextColor(ContextCompat.getColor(this, R.color.purple_700))
-            } else {
-                tv_result.setTextColor(ContextCompat.getColor(this, R.color.black))
-            }
         } else {
             id--
         }
-        tv_result.text = id.toString()
+        tv_number_show.text = id.toString()
         return true
     }
 
     override fun onLongPress(e: MotionEvent?) {
         return
     }
-
-    override fun onTouchEvent(event: MotionEvent?): Boolean {
-        gestureDetectorCompat!!.onTouchEvent(event)
-        if (event != null) {
-            if (event.action == MotionEvent.ACTION_UP) {
-                if (id > 0) {
-                    Thread {
-                        Thread.sleep(1500)
-                        if (event.action != MotionEvent.ACTION_MOVE) {
-                            for (i in 1..id) {
-                                Log.d("datnt", "onFling: $id")
-                                id--
-                                Thread.sleep(105)
-                                this@MainActivity.runOnUiThread {
-                                    this.tv_result.text = id.toString()
-                                }
-                                if (id == 0) {
-                                    break
-                                }
-                            }
-                        } else {
-                            Log.d("datnt", "onTouchEvent: donothing")
-                        }
-                    }.start()
-                } else {
-                    Thread {
-                        Thread.sleep(1500)
-                        if (event.action != MotionEvent.ACTION_MOVE) {
-                            for (i in id..-1) {
-                                Log.d("datnt", "onFling: $id")
-                                id++
-                                Thread.sleep(105)
-                                this@MainActivity.runOnUiThread {
-                                    this.tv_result.text = id.toString()
-                                }
-                                if (id == 0) {
-                                    break
-                                }
-                            }
-                        } else {
-                            Log.d("datnt", "onTouchEvent: donothing")
-                        }
-                    }.start()
-                }
-
-            }
-        }
-        return super.onTouchEvent(event)
-    }
 }
+
+
 
 
 
