@@ -1,25 +1,25 @@
 package com.example.kotlin02
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
-import android.os.SystemClock
 import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.view.GestureDetectorCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
-import kotlin.concurrent.schedule
+import kotlin.math.abs
 
 class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
     private var id = 0
     private lateinit var handler: Handler
     private lateinit var runnable: Runnable
-    private var checkRunnable: Boolean = false
+    private lateinit var runnableIncrease: Runnable
+    private lateinit var runnableDecrease: Runnable
     private val handlerThread: HandlerThread = HandlerThread("MyThread")
     private var gestureDetectorCompat: GestureDetectorCompat? = null
 
@@ -30,56 +30,81 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         handlerThread.start()
         handler = Handler(handlerThread.looper)
         gestureDetectorCompat = GestureDetectorCompat(this, this)
-        layout_touchEvent.setOnTouchListener { _, event ->
+
+        btn_plus.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                handler.removeCallbacks(runnableIncrease)
+                handler.postDelayed(runnable, 2000)
+            }
+            false
+        }
+        btn_minus.setOnTouchListener { v, event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                handler.removeCallbacks(runnableDecrease)
+                handler.postDelayed(runnable, 2000)
+            }
+            false
+        }
+
+        btn_plus.setOnLongClickListener { handler.postDelayed(runnableIncrease, 50) }
+        btn_minus.setOnLongClickListener { handler.postDelayed(runnableDecrease, 50) }
+
+        runnable = Runnable {
+            when {
+                id > 0 -> {
+                    id--
+                    this@MainActivity.runOnUiThread {
+                        this.tv_number_show.text = id.toString()
+                    }
+                    handler.postDelayed(runnable, 50)
+                }
+                id < 0 -> {
+                    id++
+                    this@MainActivity.runOnUiThread {
+                        this.tv_number_show.text = id.toString()
+                    }
+                    handler.postDelayed(runnable, 50)
+                }
+                id == 0 -> handler.removeCallbacks(runnable)
+
+            }
+        }
+
+        runnableIncrease = Runnable {
+            handler.removeCallbacks(runnable)
+            id++
+            this@MainActivity.runOnUiThread {
+                this.tv_number_show.text = id.toString()
+            }
+            if (abs(id) >= 100 && abs(id) % 100 == 0) {
+                changeTextColor()
+            }
+            handler.postDelayed(runnableIncrease, 50)
+        }
+
+        runnableDecrease = Runnable {
+            handler.removeCallbacks(runnable)
+            id--
+            this@MainActivity.runOnUiThread {
+                this.tv_number_show.text = id.toString()
+            }
+            if (abs(id) >= 100 && abs(id) % 100 == 0) {
+                changeTextColor()
+            }
+            handler.postDelayed(runnableDecrease, 50)
+        }
+
+        layout_touch.setOnTouchListener { _, event ->
             gestureDetectorCompat!!.onTouchEvent(event)
 
-            //remove runnable when user touch on screen
-            if (checkRunnable) {
-                handler.removeCallbacks(runnable)
-            }
-            //in/de crease when finger don't touch screen anymore
+            handler.removeCallbacks(runnable)
+
             if (event.action == MotionEvent.ACTION_UP) {
-                runnable = Runnable {
-                    when {
-                        id > 0 -> {
-                            checkRunnable = true
-                            for (i in 1..id) {
-                                id--
-                                Thread.sleep(105)
-                                this@MainActivity.runOnUiThread {
-                                    this.tv_number_show.text = id.toString()
-                                }
-                                if (id == 0) {
-                                    break
-                                }
-                            }
-                        }
-                        id < 0 -> {
-                            checkRunnable = true
-                            for (i in id..-1) {
-                                id++
-                                Thread.sleep(105)
-                                this@MainActivity.runOnUiThread {
-                                    this.tv_number_show.text = id.toString()
-                                }
-                                if (id == 0) {
-                                    break
-                                }
-                            }
-                        }
-                    }
-                }
-                // delay to check if user touch screen again
                 handler.postDelayed(runnable, 2000)
             }
             true
         }
     }
-
-    private fun incrementNumber() {
-
-    }
-
 
     override fun onShowPress(e: MotionEvent?) {
         return
@@ -113,12 +138,22 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         } else {
             id--
         }
+        if (abs(id) >= 100 && abs(id) % 100 == 0) {
+            changeTextColor()
+        }
         tv_number_show.text = id.toString()
         return true
     }
 
     override fun onLongPress(e: MotionEvent?) {
         return
+    }
+
+    private fun changeTextColor() {
+        val rnd = Random()
+        val color: Int = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
+        this.runOnUiThread { this.tv_number_show.setTextColor(color) }
+
     }
 }
 
