@@ -37,6 +37,11 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
                 handler.removeCallbacks(runnableIncrease)
                 handler.postDelayed(runnable, 2000)
             }
+
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                id++
+                tv_number_show.text = id.toString()
+            }
             false
         }
 
@@ -45,6 +50,11 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
             if (event.action == MotionEvent.ACTION_UP) {
                 handler.removeCallbacks(runnableDecrease)
                 handler.postDelayed(runnable, 2000)
+            }
+
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                id--
+                tv_number_show.text = id.toString()
             }
             false
         }
