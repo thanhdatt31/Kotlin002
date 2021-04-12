@@ -31,6 +31,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         handler = Handler(handlerThread.looper)
         gestureDetectorCompat = GestureDetectorCompat(this, this)
 
+        // stop increase when user release button
         btn_plus.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 handler.removeCallbacks(runnableIncrease)
@@ -38,6 +39,8 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
             }
             false
         }
+
+        // stop decrease when user release button
         btn_minus.setOnTouchListener { v, event ->
             if (event.action == MotionEvent.ACTION_UP) {
                 handler.removeCallbacks(runnableDecrease)
@@ -45,10 +48,13 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
             }
             false
         }
-
+        // increase number really fast
         btn_plus.setOnLongClickListener { handler.postDelayed(runnableIncrease, 50) }
+
+        // decrease number really fast
         btn_minus.setOnLongClickListener { handler.postDelayed(runnableDecrease, 50) }
 
+        //in/de crease number
         runnable = Runnable {
             when {
                 id > 0 -> {
@@ -97,6 +103,7 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         layout_touch.setOnTouchListener { _, event ->
             gestureDetectorCompat!!.onTouchEvent(event)
 
+            // stop in/de crease when user touch again
             handler.removeCallbacks(runnable)
 
             if (event.action == MotionEvent.ACTION_UP) {
@@ -153,7 +160,6 @@ class MainActivity : AppCompatActivity(), GestureDetector.OnGestureListener {
         val rnd = Random()
         val color: Int = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256))
         this.runOnUiThread { this.tv_number_show.setTextColor(color) }
-
     }
 }
 
